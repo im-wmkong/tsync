@@ -32,14 +32,28 @@ func (c *Cond) WaitUntilCtx(
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for !predicate() {
+	done := make(chan struct{})
+
+	// 用一个 goroutine 监听 ctx.Done()
+	go func() {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			c.cond.Wait()
+			c.mu.Lock()
+			c.cond.Broadcast()
+			c.mu.Unlock()
+		case <-done:
 		}
+	}()
+
+	defer close(done)
+
+	for !predicate() {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		c.cond.Wait()
 	}
+
 	return nil
 }
 
