@@ -251,36 +251,6 @@ wg.Wait()
 
 ---
 
-### AtomicPointer
-
-```go
-type AtomicPointer[T any] struct
-```
-
-类型安全的 `atomic.Pointer` 封装：
-
-示例：
-```go
-var p tsync.AtomicPointer[string]
-
-// 存储指针
-v := "hello"
-p.Store(&v)
-
-// 加载指针
-if ptr := p.Load(); ptr != nil {
-    fmt.Println(*ptr)
-}
-
-// CAS 操作
-newV := "world"
-if p.CompareAndSwap(&v, &newV) {
-    fmt.Println("CAS 成功")
-}
-```
-
----
-
 ### AtomicValue
 
 ```go
@@ -299,6 +269,12 @@ av.Store(10)
 
 // 原子加载
 v := av.Load() // v 类型为 int
+
+// 原子交换
+old := av.Swap(20)
+
+// CAS
+swapped := av.CompareAndSwap(20, 30)
 ```
 
 ---

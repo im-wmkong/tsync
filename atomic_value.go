@@ -21,7 +21,9 @@ func (a *AtomicValue[T]) Store(v T) {
 }
 
 func (a *AtomicValue[T]) Swap(v T) (old T) {
-	old = a.Load()
-	a.Store(v)
-	return old
+	return a.v.Swap(v).(T)
+}
+
+func (a *AtomicValue[T]) CompareAndSwap(old, new T) (swapped bool) {
+	return a.v.CompareAndSwap(old, new)
 }

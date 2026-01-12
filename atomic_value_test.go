@@ -121,6 +121,82 @@ func TestAtomicValue_ConcurrentSwap(t *testing.T) {
 	}
 }
 
+func TestAtomicValue_CompareAndSwap(t *testing.T) {
+	a := NewAtomicValue(10)
+
+	swapped := a.CompareAndSwap(10, 20)
+	if !swapped {
+		t.Fatalf("expected swap to succeed")
+	}
+	if v := a.Load(); v != 20 {
+		t.Fatalf("expected 20, got %d", v)
+	}
+
+	swapped = a.CompareAndSwap(10, 30)
+	if swapped {
+		t.Fatalf("expected swap to fail")
+	}
+	if v := a.Load(); v != 20 {
+		t.Fatalf("expected 20, got %d", v)
+	}
+}
+
+func TestAtomicValue_ConcurrentCompareAndSwap(t *testing.T) {
+	a := NewAtomicValue(0)
+
+	const goroutines = 100
+	const iterations = 100
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func() {
+			defer wg.Done()
+			for j := 0; j < iterations; j++ {
+				old := a.Load()
+				newVal := old + 1
+				a.CompareAndSwap(old, newVal)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	finalVal := a.Load()
+	if finalVal < 0 || finalVal > goroutines*iterations {
+		t.Fatalf("unexpected final value %d", finalVal)
+	}
+}
+
+func TestAtomicValue_CompareAndSwap_GenericType(t *testing.T) {
+	type user struct {
+		ID   int
+		Name string
+	}
+
+	a := NewAtomicValue(user{
+		ID:   1,
+		Name: "user1",
+	})
+
+	oldUser := user{ID: 1, Name: "user1"}
+	newUser := user{ID: 2, Name: "user2"}
+	swapped := a.CompareAndSwap(oldUser, newUser)
+	if !swapped {
+		t.Fatalf("expected swap to succeed")
+	}
+
+	currentUser := a.Load()
+	if currentUser.ID != 2 || currentUser.Name != "user2" {
+		t.Fatalf("unexpected value %+v", currentUser)
+	}
+
+	swapped = a.CompareAndSwap(oldUser, newUser)
+	if swapped {
+		t.Fatalf("expected swap to fail")
+	}
+}
+
 func TestAtomicValue_Load_Uninitialized_Panic(t *testing.T) {
 	var a AtomicValue[int]
 
