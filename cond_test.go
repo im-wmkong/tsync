@@ -40,7 +40,6 @@ func TestCond_WaitUntilCtx_Cancel(t *testing.T) {
 
 func TestCond_Signal(t *testing.T) {
 	c := NewCond()
-
 	var count atomic.Int32
 
 	go func() {
@@ -50,9 +49,10 @@ func TestCond_Signal(t *testing.T) {
 		count.Add(1)
 	}()
 
-	time.Sleep(20 * time.Millisecond)
+	c.mu.Lock()
 	count.Store(1)
-	c.Signal()
+	c.cond.Signal()
+	c.mu.Unlock()
 
 	time.Sleep(20 * time.Millisecond)
 
