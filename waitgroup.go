@@ -9,7 +9,6 @@ type WaitGroup struct {
 	wg           sync.WaitGroup
 	onPanic      PanicHandler
 	recoverPanic bool
-	panicOnce    sync.Once
 }
 
 type PanicHandler func(p any)
@@ -40,6 +39,10 @@ func (wg *WaitGroup) Go(f func()) {
 }
 
 func (wg *WaitGroup) GoCtx(ctx context.Context, f func(ctx context.Context)) {
+	if ctx.Err() != nil {
+		return
+	}
+
 	wg.wg.Add(1)
 	go func() {
 		defer wg.wg.Done()
@@ -68,9 +71,7 @@ func (wg *WaitGroup) run(f func()) {
 	defer func() {
 		if p := recover(); p != nil {
 			if wg.onPanic != nil {
-				wg.panicOnce.Do(func() {
-					wg.onPanic(p)
-				})
+				wg.onPanic(p)
 			}
 		}
 	}()

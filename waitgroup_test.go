@@ -97,29 +97,6 @@ func TestWaitGroup_PanicRecovery(t *testing.T) {
 	}
 }
 
-func TestWaitGroup_PanicHandler_Once(t *testing.T) {
-	var count atomic.Int32
-
-	wg := NewWaitGroup(
-		WithPanicRecovery(func(p any) {
-			count.Add(1)
-		}),
-	)
-
-	const n = 5
-	for i := 0; i < n; i++ {
-		wg.Go(func() {
-			panic("boom")
-		})
-	}
-
-	wg.Wait()
-
-	if count.Load() != 1 {
-		t.Fatalf("expected handler to be called once, got %d", count.Load())
-	}
-}
-
 func TestWaitGroup_PanicRecovery_NilHandler(t *testing.T) {
 	wg := NewWaitGroup(
 		WithPanicRecovery(nil),
