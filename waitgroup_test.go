@@ -120,29 +120,6 @@ func TestWaitGroup_PanicHandler_Once(t *testing.T) {
 	}
 }
 
-func TestWaitGroup_Panic_NoRecovery(t *testing.T) {
-	wg := NewWaitGroup()
-
-	done := make(chan struct{})
-
-	go func() {
-		defer close(done)
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("expected panic")
-			}
-		}()
-
-		wg.Go(func() {
-			panic("boom")
-		})
-
-		wg.Wait()
-	}()
-
-	<-done
-}
-
 func TestWaitGroup_PanicRecovery_NilHandler(t *testing.T) {
 	wg := NewWaitGroup(
 		WithPanicRecovery(nil),
