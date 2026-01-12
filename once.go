@@ -18,6 +18,7 @@ func NewOnceValue[T any](fn func() T) *OnceValue[T] {
 func (o *OnceValue[T]) Get() T {
 	o.once.Do(func() {
 		o.v = o.fn()
+		o.fn = nil
 	})
 	return o.v
 }
