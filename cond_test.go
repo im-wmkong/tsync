@@ -38,6 +38,28 @@ func TestCond_WaitUntilCtx_Cancel(t *testing.T) {
 	}
 }
 
+func TestCond_WaitUntilCtx_ReturnNil(t *testing.T) {
+	c := NewCond()
+	var ready atomic.Bool
+
+	// 创建一个不会被取消的上下文
+	ctx := context.Background()
+
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		ready.Store(true)
+		c.Broadcast()
+	}()
+
+	err := c.WaitUntilCtx(ctx, func() bool {
+		return ready.Load()
+	})
+
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+}
+
 func TestCond_Signal(t *testing.T) {
 	c := NewCond()
 	var count atomic.Int32
@@ -49,10 +71,10 @@ func TestCond_Signal(t *testing.T) {
 		count.Add(1)
 	}()
 
-	c.mu.Lock()
+	// 使用公共的Signal方法而不是直接调用内部的cond.Signal()
+	time.Sleep(20 * time.Millisecond) // 确保goroutine已经开始等待
 	count.Store(1)
-	c.cond.Signal()
-	c.mu.Unlock()
+	c.Signal()
 
 	time.Sleep(20 * time.Millisecond)
 

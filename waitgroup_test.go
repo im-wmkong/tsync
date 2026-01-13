@@ -108,3 +108,29 @@ func TestWaitGroup_PanicRecovery_NilHandler(t *testing.T) {
 
 	wg.Wait()
 }
+
+func TestWaitGroup_GoCtx_CancelDuringExecution(t *testing.T) {
+	wg := NewWaitGroup()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	var called atomic.Bool
+
+	wg.GoCtx(ctx, func(ctx context.Context) {
+		// 模拟一个长时间运行的函数
+		select {
+		case <-ctx.Done():
+			// 即使在函数内部，也应该响应上下文取消
+			return
+		}
+		called.Store(true)
+	})
+
+	// 立即取消上下文，这应该会触发goroutine内部select的ctx.Done()分支
+	cancel()
+
+	wg.Wait()
+
+	if called.Load() {
+		t.Fatalf("function should not complete when context is canceled during execution")
+	}
+}

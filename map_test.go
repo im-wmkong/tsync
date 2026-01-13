@@ -80,6 +80,21 @@ func TestMap_MustLoad(t *testing.T) {
 	}
 }
 
+func TestMap_MustLoad_Panic(t *testing.T) {
+	var m Map[string, int]
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected MustLoad to panic, but it didn't")
+		} else if r != "tsync.Map: key not found" {
+			t.Fatalf("expected panic message 'tsync.Map: key not found', got '%v'", r)
+		}
+	}()
+
+	// 尝试加载不存在的键，应该会panic
+	m.MustLoad("non_existent_key")
+}
+
 func TestMap_Range(t *testing.T) {
 	var m Map[string, int]
 
