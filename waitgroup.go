@@ -30,15 +30,15 @@ func NewWaitGroup(opts ...WaitGroupOption) *WaitGroup {
 	return wg
 }
 
-func (wg *WaitGroup) Go(f func()) {
+func (wg *WaitGroup) Go(fn func()) {
 	wg.wg.Add(1)
 	go func() {
 		defer wg.wg.Done()
-		wg.run(f)
+		wg.run(fn)
 	}()
 }
 
-func (wg *WaitGroup) GoCtx(ctx context.Context, f func(ctx context.Context)) {
+func (wg *WaitGroup) GoCtx(ctx context.Context, fn func(ctx context.Context)) {
 	if ctx.Err() != nil {
 		return
 	}
@@ -52,7 +52,7 @@ func (wg *WaitGroup) GoCtx(ctx context.Context, f func(ctx context.Context)) {
 			return
 		default:
 			wg.run(func() {
-				f(ctx)
+				fn(ctx)
 			})
 		}
 	}()
@@ -62,9 +62,9 @@ func (wg *WaitGroup) Wait() {
 	wg.wg.Wait()
 }
 
-func (wg *WaitGroup) run(f func()) {
+func (wg *WaitGroup) run(fn func()) {
 	if !wg.recoverPanic {
-		f()
+		fn()
 		return
 	}
 
@@ -76,5 +76,5 @@ func (wg *WaitGroup) run(f func()) {
 		}
 	}()
 
-	f()
+	fn()
 }
